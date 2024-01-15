@@ -1,0 +1,9 @@
+{
+  "required": true,
+  "package": "live.temper.corepatches.mixins",
+  "refmap": "mixins.cleanerhits.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinPlayerController"
+  ]
+}

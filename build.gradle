@@ -1,0 +1,129 @@
+buildscript {
+    repositories {
+        jcenter()
+
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = 'SpongePowered'
+            url = 'http://repo.spongepowered.org/maven'
+        }
+        maven {
+            url  "https://jcenter.bintray.com"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.1-SNAPSHOT'
+        classpath "org.spongepowered:mixingradle:0.6-SNAPSHOT"
+        classpath "com.github.jengelman.gradle.plugins:shadow:1.2.3"
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+
+    maven {
+        name = 'spongepowered-repo'
+        url = 'http://repo.spongepowered.org/maven/'
+    }
+    maven {
+        url  "https://jcenter.bintray.com"
+    }
+}
+
+version = "1.0"
+group= "live.temper.cleanerhits"
+archivesBaseName = "cleanerhits"
+
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    runDir = "run"
+    mappings = "stable_22"
+    coreMod = "live.temper.corepatches.MixinLoader"
+    //makeObfSourceJar = true
+}
+
+dependencies {
+    compile("org.spongepowered:mixin:0.6.4-SNAPSHOT") {
+        exclude module: "launchwrapper"
+    }
+    implementation 'org.jetbrains:annotations:15.0'
+    implementation 'org.identityconnectors:identityconnectors-parent:1.0'
+}
+
+processResources
+{
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+
+shadowJar {
+    dependencies {
+        include(dependency('org.spongepowered:mixin'))
+        include(dependency('org.jetbrains:annotations'))
+    }
+
+    exclude 'dummyThing'
+    exclude 'LICENSE.txt'
+    classifier = 'release'
+}
+
+mixin {
+    defaultObfuscationEnv searge
+    add sourceSets.main, "mixins.cleanerhits.refmap.json"
+}
+
+reobf {
+    shadowJar {
+        mappingType = "SEARGE"
+        classpath = sourceSets.main.compileClasspath
+    }
+}
+
+jar {
+    manifest.attributes(
+            "MixinConfigs": 'mixins.cleanerhits.json',
+            "tweakClass": 'org.spongepowered.asm.launch.MixinTweaker',
+            "TweakOrder": 0,
+            "FMLCorePluginContainsFMLMod": 'true',
+            'ForceLoadAsMod': 'true',
+    )
+}
+
+configurations {
+    mods
+    shade
+    compile.extendsFrom shade
+}
+
+apply plugin: "idea"
+
+idea {
+    module {
+        inheritOutputDirs = true
+    }
+}
+
+build.dependsOn(shadowJar)
